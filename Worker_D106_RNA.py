@@ -1,11 +1,11 @@
 #conda activate cellpose2&&python D:\Carlos\NMERFISH\Worker_D106_RNA.py
 
-master_analysis_folder = r'C:\Scripts\NMERFISH'
-lib_fl = r'D:\Carlos\NMERFISH\codebook_LouBBBrain_10_21_blank.csv'
+master_analysis_folder = r'/home/cfg001/Desktop/Coconut2NMERFISH'
+lib_fl = master_analysis_folder+r'/codebook_LouBBBrain_10_21_blank.csv'
 ### Did you compute PSF and median flat field images?
-psf_file = r'D:\Carlos\Scripts\psfs\psf_647_Kiwi.npy'
-flat_field_tag = r'S:\20231024_D106Luo_RNA_analysis\D106_RNA__'
-master_data_folder = r'\\merfish10.ucsd.edu\volume1\20231024_D106Luo\RNA'
+psf_file = master_analysis_folder+r'/psfs/psf_647_Kiwi.npy'
+flat_field_tag = master_analysis_folder+r'/flat_field/D106_RNA__'
+master_data_folder = r'/mnt/merfish10/20231024_D106Luo/RNA'
 save_folder =r'S:\20231024_D106Luo_RNA_analysis'
 iHm=1
 iHM=16

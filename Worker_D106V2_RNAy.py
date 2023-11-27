@@ -1,12 +1,12 @@
 #conda activate cellpose2&&python D:\Carlos\NMERFISH\Worker_D106_RNA.py
 
-master_analysis_folder = r'C:\Scripts\NMERFISHNEW'
-lib_fl = r'C:\Scripts\NMERFISHNEW\codebook_code_color2__LouBBBrain_10_21V2_blank.csv'
+master_analysis_folder = r'/home/cfg001/Desktop/Coconut2NMERFISH'
+lib_fl = master_analysis_folder+r'/codebook_code_color2__LouBBBrain_10_21V2_blank.csv'
 ### Did you compute PSF and median flat field images?
-psf_file = r'C:\Scripts\NMERFISHNEW\psfs\psf_647_Kiwi.npy'
-flat_field_tag = r'C:\Scripts\NMERFISHNEW\flat_field\D106_RNA__'
-master_data_folder = r'\\merfish10.ucsd.edu\volume1\20231107_D106LuoRMER\RNA'
-save_folder =r'\\merfish10.ucsd.edu\volume1\20231107_D106LuoRMER_analysis'
+psf_file = master_analysis_folder+r'/psfs/psf_647_Kiwi.npy'
+flat_field_tag = master_analysis_folder+r'/flat_field/D106_RNA__'
+master_data_folder = r'/mnt/merfish10/20231107_D106LuoRMER/RNA'
+save_folder =r'/mnt/merfish10/20231107_D106LuoRMER_analysis'
 iHm=1
 iHM=16
 
@@ -79,7 +79,7 @@ def get_XHV2(dec,ncols=3,nbits=16,th_h=5000,filter_tag = ''):
     set_ = dec.set_
     drift_fl = dec.drift_fl
     drifts,all_flds,fov,fl_ref = pickle.load(open(drift_fl,'rb'))
-    all_flds = [os.path.dirname(fld) for fld in all_flds]
+    all_flds = [os.path.dirname(fld) for fld in all_flds if os.path.basename(fld)=='']
     dec.drifts,dec.all_flds,dec.fov,dec.fl_ref = drifts,all_flds,fov,fl_ref
     
     XH = []
@@ -105,6 +105,7 @@ def get_XHV2(dec,ncols=3,nbits=16,th_h=5000,filter_tag = ''):
                             XH.extend(XH_)
     dec.XH = np.array(XH)
 def compute_decoding(save_folder,fov,set_,redo=False):
+    redid_decoding_tag=False
     dec = decoder_simple(save_folder,fov,set_)
     complete = dec.check_is_complete()
     try:
@@ -169,7 +170,8 @@ def compute_decoding(save_folder,fov,set_,redo=False):
         dec.get_inters(dinstance_th=2,nmin_bits=4,enforce_color=True,redo=True)
         #dec.get_icodes(nmin_bits=4,method = 'top4',norm_brightness=None,nbits=24)#,is_unique=False)
         get_icodesV2(dec,nmin_bits=4,delta_bits=None,iH=-3,redo=False,norm_brightness=False,nbits=48,is_unique=True)
-
+        redid_decoding_tag = True
+    return redid_decoding_tag
 def get_iH(fld): 
     try:
         return int(os.path.basename(fld).split('_')[0][1:])
@@ -181,7 +183,7 @@ def get_files(set_ifov,iHm=iHm,iHM=iHM):
     
     if not os.path.exists(save_folder): os.makedirs(save_folder)
         
-    all_flds = [fld for fld in glob.glob(master_folder+r'\H*') if os.path.isdir(fld)]
+    all_flds = [fld for fld in glob.glob(master_folder+r'/H*') if os.path.isdir(fld)]
     #all_flds += glob.glob(master_folder+r'\P*')
     
     ### reorder based on hybe
@@ -262,8 +264,8 @@ def compute_main_f(save_folder,all_flds,fov,set_,ifov,redo_fits,redo_drift,redo_
     #compute_drift(save_folder,fov,all_flds,set_,redo=redo_drift)
     compute_drift_features(save_folder,fov,all_flds,set_,redo=redo_drift,gpu=True)
     compute_drift_V2(save_folder,fov,all_flds,set_,redo=redo_drift,gpu=True)
-    compute_decoding(save_folder,fov,set_,redo=(redo_decoding or redid_fit))
-
+    redid_decoding_tag = compute_decoding(save_folder,fov,set_,redo=(redo_decoding or redid_fit))
+    return redid_decoding_tag
     
 ############### End Code inserted here!!! ##################
 
@@ -272,20 +274,22 @@ def main_f(set_ifov,redo_fits = False,redo_drift=False,redo_decoding=False,try_m
     
     save_folder,all_flds,fov = get_files(set_ifov)
     
-    fl = save_folder+os.sep+'completedV2__'+str(ifov)+'.txt'
+    fl = save_folder+os.sep+'coconut2__'+str(ifov)+'.txt'
     
     if True:#not os.path.exists(fl):
         if try_mode:
             try:
-                compute_main_f(save_folder,all_flds,fov,set_,ifov,redo_fits,redo_drift,redo_decoding,try_mode,old_method)
-                fid = open(fl,'w')
-                fid.close()
+                redid_decoding_tag = compute_main_f(save_folder,all_flds,fov,set_,ifov,redo_fits,redo_drift,redo_decoding,try_mode,old_method)
+                if redid_decoding_tag:
+                    fid = open(fl,'w')
+                    fid.close()
             except:
                 print("Failed within the main analysis:")
         else:
-            compute_main_f(save_folder,all_flds,fov,set_,ifov,redo_fits,redo_drift,redo_decoding,try_mode,old_method)
-            fid = open(fl,'w')
-            fid.close()
+            redid_decoding_tag = compute_main_f(save_folder,all_flds,fov,set_,ifov,redo_fits,redo_drift,redo_decoding,try_mode,old_method)
+            if redid_decoding_tag:
+                    fid = open(fl,'w')
+                    fid.close()
     
     
     return set_ifov
@@ -299,12 +303,12 @@ if __name__ == '__main__':
     #items = [('',ifov) for ifov in [17, 37, 38, 39, 40, 44, 45, 46, 47, 48, 50, 51, 55, 56, 58, 60, 63, 68, 70, 71, 77, 84, 85, 86, 87, 88, 91, 92, 107, 108, 110, 116, 120, 126, 131, 133, 159, 183, 208, 215, 229, 243, 246, 248, 265, 267, 269]]
     #print("Found decode fls:",len(glob.glob(save_folder+os.sep+'driftNew*')))
     #main_f(['_set2',81],redo_decoding=False,try_mode=False)#_010--_set2
-    ifovs_ = [ 406]
+    ifovs_ = [ 1000]
     items_ = [('',ifov) for ifov in ifovs_]
     for item in items_:
         main_f(item,redo_drift=False,redo_decoding=False,try_mode=False)
-    if True:
+    if False:
         with Pool(processes=4) as pool:
             print('starting pool')
             result = pool.map(main_f, items)
-#conda activate cellpose&&python C:\Scripts\NMERFISHNEW\Worker_D106V2_RNAy.py
+#conda activate cellpose&&python /home/cfg001/Desktop/Coconut2NMERFISH/Worker_D106V2_RNAy.py
